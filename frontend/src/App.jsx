@@ -1,32 +1,22 @@
-import { useState } from 'react';
-import { 
-  Upload, 
-  Image as ImageIcon, 
-  Wand2, 
-  Download, 
-  AlertCircle, 
-  Layers, 
-  Droplets, 
-  Sun, 
-  Zap,
-  ScanLine
-} from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, Image as ImageIcon, Wand2, Download, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [processedUrl, setProcessedUrl] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState('gris');
+  const [imageBase64, setImageBase64] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState('gris');
 
-  // Filtros con Iconos y descripciones
+  const fileInputRef = useRef(null);
+
   const filtros = [
-    { id: 'gris', label: 'B&W', desc: 'Clásico atemporal', icon: <Layers className="w-5 h-5"/> },
-    { id: 'blur', label: 'Blur', desc: 'Suavizado onírico', icon: <Droplets className="w-5 h-5"/> },
-    { id: 'contorno', label: 'Bordes', desc: 'Estilo boceto', icon: <ScanLine className="w-5 h-5"/> },
-    { id: 'negativo', label: 'Invertir', desc: 'Colores opuestos', icon: <Zap className="w-5 h-5"/> },
-    { id: 'detalle', label: 'HDR', desc: 'Resaltar texturas', icon: <Sun className="w-5 h-5"/> },
+    { id: 'gris', label: 'Blanco y Negro', desc: 'Clásico monocromo' },
+    { id: 'blur', label: 'Blur', desc: 'Suavizado difuso' },
+    { id: 'contorno', label: 'Bordes', desc: 'Detección de trazos' },
+    { id: 'negativo', label: 'Invertir', desc: 'Colores opuestos' },
+    { id: 'detalle', label: 'HDR', desc: 'Resalta detalles' },
   ];
 
   const handleFileChange = (e) => {
@@ -34,14 +24,21 @@ function App() {
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
-      setProcessedUrl(null);
+      setImageBase64(null);
       setError(null);
     }
   };
 
+  const handleReset = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setImageBase64(null);
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const procesarImagen = async () => {
     if (!selectedFile) return;
-
     setLoading(true);
     setError(null);
 
@@ -54,15 +51,16 @@ function App() {
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al procesar la imagen');
-      }
+      if (!response.ok) throw new Error('Error al conectar con el servidor.');
 
       const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      setProcessedUrl(imageUrl);
       
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageBase64(reader.result);
+      };
+      reader.readAsDataURL(blob);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -70,181 +68,183 @@ function App() {
     }
   };
 
+  const descargarManual = () => {
+    if (!imageBase64) return;
+    const link = document.createElement("a");
+    link.href = imageBase64;
+    
+   
+    link.download = `editor-${selectedFilter}_${Date.now()}.png`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    // FONDO CON DEGRADADO
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 text-slate-800 font-sans p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-slate-800 p-4 md:p-8">
+      
+      <div className="max-w-5xl mx-auto">
         {/* HEADER */}
-        <header className="mb-12 text-center space-y-4">
-          <div className="inline-flex items-center justify-center p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-sm mb-4">
-            <span className="flex items-center gap-2 text-sm font-bold text-indigo-600 tracking-wide uppercase px-2">
-              <Wand2 className="w-4 h-4" /> Photo Studio
-            </span>
+        <header className="mb-10 text-center">
+          <div className="inline-flex items-center justify-center p-3 bg-white rounded-full shadow-sm mb-4 border border-indigo-50">
+            <Wand2 className="w-6 h-6 text-indigo-600 mr-2" />
+            <span className="text-sm font-bold text-indigo-900 tracking-wider">PHOTO EDITOR</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">
-            Transforma tus Fotos
+          
+          {/* AQUÍ ESTÁ EL CAMBIO DE COLOR: DEGRADADO DE TEXTO */}
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 drop-shadow-sm pb-2 leading-tight">
+            Transforma tus imágenes
           </h1>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Sube tu imagen, edítala con filtros y descárgala al instante.
+          
+          <p className="text-slate-500 text-lg md:text-xl font-light">
+            Aplica filtros inteligentes en segundos a tus fotos favoritas.
           </p>
         </header>
 
-        {/* CONTENEDOR PRINCIPAL TIPO TARJETA */}
-        <div className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* COLUMNA IZQUIERDA: CONTROLES */}
+          <div className="lg:col-span-4 space-y-6">
             
-            {/* PANEL IZQUIERDO: CONTROLES */}
-            <div className="lg:col-span-4 p-8 border-b lg:border-b-0 lg:border-r border-indigo-100 bg-white/40">
+            {/* 1. CARD DE SUBIDA */}
+            <div className="bg-white p-6 rounded-2xl shadow-xl shadow-indigo-100/50 border border-white">
+              <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Upload size={18}/></div>
+                Sube tu imagen
+              </h3>
               
-              {/* SECCIÓN 1: SUBIDA */}
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <span className="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-                  Cargar Imagen
-                </h3>
-                <label className="group relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-indigo-200 rounded-2xl cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center p-4">
-                    <div className="bg-white p-3 rounded-full shadow-md mb-3 group-hover:scale-110 transition-transform">
-                      <Upload className="w-6 h-6 text-indigo-500" />
-                    </div>
-                    <p className="text-sm text-slate-600 font-medium">
-                      {selectedFile ? selectedFile.name : "Arrastra o haz click"}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">PNG, JPG hasta 10MB</p>
+              {!selectedFile ? (
+                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-indigo-200 rounded-xl cursor-pointer bg-slate-50 hover:bg-indigo-50/50 transition-all group">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6 transform group-hover:scale-105 transition-transform">
+                    <ImageIcon className="w-10 h-10 mb-3 text-indigo-300 group-hover:text-indigo-500 transition-colors" />
+                    <p className="mb-1 text-sm text-slate-500 font-medium">Click para seleccionar</p>
+                    <p className="text-xs text-slate-400">JPG, PNG (Max 5MB)</p>
                   </div>
-                  <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                 </label>
-              </div>
-
-              {/* SECCIÓN 2: FILTROS */}
-              <div className="mb-8">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <span className="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-                  Seleccionar Filtro
-                </h3>
-                <div className="space-y-3">
-                  {filtros.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => setSelectedFilter(f.id)}
-                      className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 border ${
-                        selectedFilter === f.id
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 scale-[1.02]'
-                          : 'bg-white border-transparent hover:border-indigo-200 text-slate-600 hover:bg-indigo-50'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg mr-3 ${selectedFilter === f.id ? 'bg-white/20' : 'bg-indigo-50 text-indigo-500'}`}>
-                        {f.icon}
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold text-sm">{f.label}</p>
-                        <p className={`text-xs ${selectedFilter === f.id ? 'text-indigo-100' : 'text-slate-400'}`}>{f.desc}</p>
-                      </div>
+              ) : (
+                <div className="relative group overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+                  <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover opacity-90 transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                    <button onClick={handleReset} className="bg-white text-red-500 px-4 py-2 rounded-full font-bold text-sm shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-red-50">
+                      Cambiar imagen
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* BOTÓN PROCESAR */}
-              <button
-                onClick={procesarImagen}
-                disabled={!selectedFile || loading}
-                className={`w-full py-4 rounded-xl font-bold text-lg shadow-xl transition-all duration-300 flex items-center justify-center gap-2 ${
-                  !selectedFile || loading
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-indigo-300/50 hover:-translate-y-1'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <Wand2 className="w-5 h-5 animate-spin" /> Creando Magia...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-5 h-5" /> Aplicar Filtro
-                  </>
-                )}
-              </button>
-
-              {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl flex items-start gap-3 text-sm animate-pulse">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  {error}
+                  </div>
+                  <div className="absolute bottom-2 left-2 bg-white/95 px-3 py-1 rounded-lg text-xs font-bold text-slate-700 flex items-center gap-1 shadow-sm border border-slate-100">
+                     <CheckCircle2 size={12} className="text-green-500"/> Listo
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* PANEL DERECHO: VISUALIZACIÓN */}
-            <div className="lg:col-span-8 p-8 bg-slate-50/50 relative">
+            {/* 2. CARD DE FILTROS */}
+            <div className={`bg-white p-6 rounded-2xl shadow-xl shadow-indigo-100/50 border border-white transition-all duration-300 ${!selectedFile ? 'opacity-50 pointer-events-none grayscale' : 'opacity-100'}`}>
+              <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <div className="p-2 bg-purple-100 rounded-lg text-purple-600"><Wand2 size={18}/></div>
+                Elige un filtro
+              </h3>
               
-              {!previewUrl ? (
-                // ESTADO VACÍO
-                <div className="h-full flex flex-col items-center justify-center text-slate-300 border-4 border-dashed border-slate-200 rounded-3xl min-h-[400px]">
-                  <ImageIcon className="w-24 h-24 mb-4 opacity-20" />
-                  <p className="text-xl font-medium opacity-50">La magia sucede aquí</p>
-                </div>
-              ) : (
-                // COMPARACIÓN
-                <div className="h-full flex flex-col gap-6">
-                  
-                  {/* IMAGEN ORIGINAL (PEQUEÑA) */}
-                  {!processedUrl && (
-                     <div className="flex-1 flex flex-col justify-center items-center animate-fade-in">
-                        <div className="relative group">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                          <img 
-                            src={previewUrl} 
-                            alt="Original" 
-                            className="relative rounded-xl shadow-2xl max-h-[500px] object-contain border-4 border-white" 
-                          />
-                          <span className="absolute top-4 left-4 bg-black/50 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">
-                            ORIGINAL
-                          </span>
-                        </div>
-                     </div>
-                  )}
-
-                  {/* RESULTADO (GRANDE) */}
-                  {processedUrl && (
-                    <div className="flex-1 flex flex-col justify-center items-center animate-in fade-in zoom-in duration-500">
-                      <div className="relative group w-full max-w-2xl">
-                         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
-                         <img 
-                            src={processedUrl} 
-                            alt="Procesada" 
-                            className="relative w-full rounded-2xl shadow-2xl border-4 border-white bg-white" 
-                         />
-                         
-                         {/* ETIQUETA FLOTANTE */}
-                         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-4">
-                           <a 
-                             href={processedUrl} 
-                             download={`magic-image-${selectedFilter}.png`}
-                             className="bg-white text-indigo-600 hover:bg-indigo-50 px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transition-transform hover:scale-105"
-                           >
-                             <Download className="w-4 h-4" /> Descargar HD
-                           </a>
-                           <button 
-                             onClick={() => setProcessedUrl(null)}
-                             className="bg-black/80 text-white hover:bg-black px-6 py-3 rounded-full font-bold shadow-lg backdrop-blur-md border border-white/20"
-                           >
-                             Probar otro
-                           </button>
-                         </div>
-                      </div>
+              <div className="grid grid-cols-1 gap-3">
+                {filtros.map(f => (
+                  <button 
+                    key={f.id} 
+                    onClick={() => setSelectedFilter(f.id)} 
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 text-left relative overflow-hidden
+                      ${selectedFilter === f.id 
+                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 shadow-md' 
+                        : 'border-slate-100 hover:border-indigo-200 hover:bg-slate-50 hover:shadow-sm'}`}
+                  >
+                    <div className="z-10 relative">
+                      <span className={`block font-bold text-sm ${selectedFilter === f.id ? 'text-indigo-800' : 'text-slate-600'}`}>{f.label}</span>
+                      <span className="text-xs text-slate-400 font-medium">{f.desc}</span>
                     </div>
-                  )}
+                    {selectedFilter === f.id && <div className="w-2 h-2 bg-indigo-500 rounded-full shadow-lg z-10"></div>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. BOTÓN DE ACCIÓN */}
+            <button 
+              onClick={procesarImagen} 
+              disabled={loading || !selectedFile} 
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-lg shadow-lg shadow-indigo-200 hover:shadow-2xl hover:shadow-indigo-300 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex justify-center items-center gap-2 group"
+            >
+              {loading ? (
+                <><Loader2 className="animate-spin" /> Procesando...</>
+              ) : (
+                <><Wand2 size={20} className="group-hover:rotate-12 transition-transform"/> Aplicar Magia</>
+              )}
+            </button>
+            
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 text-center animate-pulse font-medium">
+                ⚠️ Error: {error}
+              </div>
+            )}
+
+          </div>
+
+          {/* COLUMNA DERECHA: RESULTADO */}
+          <div className="lg:col-span-8">
+            <div className="h-full min-h-[500px] bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-white p-2 relative flex flex-col">
+              
+              {/* ÁREA DE VISUALIZACIÓN */}
+              <div className="flex-1 bg-slate-50 rounded-2xl overflow-hidden relative flex items-center justify-center checkerboard-pattern border border-slate-100/50">
+                {!imageBase64 ? (
+                  <div className="text-center p-10 opacity-40">
+                    <ImageIcon className="w-24 h-24 mx-auto mb-4 text-slate-300" />
+                    <p className="text-xl font-medium text-slate-400">El resultado aparecerá aquí</p>
+                  </div>
+                ) : (
+                  <img 
+                    src={imageBase64} 
+                    alt="Resultado" 
+                    className="max-w-full max-h-[600px] object-contain shadow-2xl rounded-lg animate-in fade-in zoom-in duration-500"
+                    style={{ position: 'relative', zIndex: 10 }} 
+                  />
+                )}
+              </div>
+
+              {/* BARRA DE HERRAMIENTAS INFERIOR */}
+              {imageBase64 && (
+                <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-b-3xl">
+                  <div className="text-sm text-slate-500 hidden sm:block">
+                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mr-2 shadow-sm">Éxito</span>
+                    Filtro: <span className="font-bold text-slate-800">{filtros.find(f => f.id === selectedFilter)?.label}</span>
+                  </div>
+                  
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    <button 
+                      onClick={handleReset}
+                      className="flex-1 sm:flex-none px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-900 transition-colors flex items-center justify-center gap-2 hover:border-slate-300"
+                    >
+                      <RefreshCw size={18} /> Reiniciar
+                    </button>
+                    
+                    <button 
+                      onClick={descargarManual}
+                      className="flex-1 sm:flex-none px-8 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                    >
+                      <Download size={18} /> Descargar
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
-        
-        <p className="text-center text-slate-400 mt-8 text-sm">
-          Potenciado por FastAPI & React. Diseñado con Tailwind CSS.
-        </p>
+
+        </main>
       </div>
+      
+      <style>{`
+        .checkerboard-pattern {
+          background-image: linear-gradient(45deg, #f1f5f9 25%, transparent 25%), linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f1f5f9 75%), linear-gradient(-45deg, transparent 75%, #f1f5f9 75%);
+          background-size: 20px 20px;
+          background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+      `}</style>
     </div>
   );
 }
