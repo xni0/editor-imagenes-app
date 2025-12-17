@@ -46,7 +46,8 @@ function App() {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch(`http://localhost:8000/procesar-imagen/?filtro=${selectedFilter}`, {
+      
+        const response = await fetch(`https://editor-imagenes-app.onrender.com/procesar-imagen/?filtro=${selectedFilter}`, {
         method: 'POST',
         body: formData,
       });
