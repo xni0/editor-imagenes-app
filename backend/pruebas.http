@@ -1,0 +1,59 @@
+### Variables globales
+@host = http://127.0.0.1:8000
+
+### Prueba básica (Filtro por defecto: Gris)
+POST {{host}}/procesar-imagen/?filtro=gris
+Content-Type: multipart/form-data; boundary=Miboundary123
+
+--Miboundary123
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--Miboundary123--
+
+### Prueba con Filtro BLUR
+POST {{host}}/procesar-imagen/?filtro=blur
+Content-Type: multipart/form-data; boundary=Miboundary123
+
+--Miboundary123
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--Miboundary123--
+
+### Prueba con Filtro CONTORNO
+POST {{host}}/procesar-imagen/?filtro=contorno
+Content-Type: multipart/form-data; boundary=Miboundary123
+
+--Miboundary123
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--Miboundary123--
+
+### Prueba con Filtro NEGATIVO
+POST {{host}}/procesar-imagen/?filtro=negativo
+Content-Type: multipart/form-data; boundary=Miboundary123
+
+--Miboundary123
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--Miboundary123--
+
+### PRUEBA DE SEGURIDAD: Archivo falso (Debe dar Error 400)
+# Aquí simulamos enviar un archivo de texto diciendo que es una imagen.
+# Tu API debería darse cuenta de que no es una imagen real y rechazarlo.
+POST {{host}}/procesar-imagen/?filtro=gris
+Content-Type: multipart/form-data; boundary=BoundaryFake
+
+--BoundaryFake
+Content-Disposition: form-data; name="file"; filename="falsificacion.png"
+Content-Type: image/png
+
+Esto es solo texto simulando ser una imagen. Tu API debe rechazarme.
+--BoundaryFake--
