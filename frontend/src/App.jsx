@@ -93,7 +93,7 @@ function App() {
             <span className="text-sm font-bold text-indigo-900 tracking-wider">PHOTO EDITOR</span>
           </div>
           
-          {/* AQUÍ ESTÁ EL CAMBIO DE COLOR: DEGRADADO DE TEXTO */}
+          
           <h1 className="text-4xl md:text-6xl font-extrabold mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 drop-shadow-sm pb-2 leading-tight">
             Transforma tus imágenes
           </h1>
@@ -108,7 +108,7 @@ function App() {
           {/* COLUMNA IZQUIERDA: CONTROLES */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* 1. CARD DE SUBIDA */}
+            {/* CARD DE SUBIDA */}
             <div className="bg-white p-6 rounded-2xl shadow-xl shadow-indigo-100/50 border border-white">
               <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
                 <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Upload size={18}/></div>
@@ -139,7 +139,7 @@ function App() {
               )}
             </div>
 
-            {/* 2. CARD DE FILTROS */}
+            {/* CARD DE FILTROS */}
             <div className={`bg-white p-6 rounded-2xl shadow-xl shadow-indigo-100/50 border border-white transition-all duration-300 ${!selectedFile ? 'opacity-50 pointer-events-none grayscale' : 'opacity-100'}`}>
               <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
                 <div className="p-2 bg-purple-100 rounded-lg text-purple-600"><Wand2 size={18}/></div>
@@ -166,7 +166,7 @@ function App() {
               </div>
             </div>
 
-            {/* 3. BOTÓN DE ACCIÓN */}
+            {/* BOTÓN DE ACCIÓN */}
             <button 
               onClick={procesarImagen} 
               disabled={loading || !selectedFile} 
